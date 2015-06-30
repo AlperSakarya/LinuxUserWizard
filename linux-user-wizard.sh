@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-#if [[ $EUID -eq 0 ]]; then
-#    echo "Tou need to have root privileges to run this script
-#Please try again, this time using 'sudo'. Exiting."
-#    exit
-#fi
+if ! [ $(id -u) = 0 ]; then
+    echo "Tou need to have root privileges to run this script
+Please try again, this time using 'sudo'. Exiting."
+    exit
+fi
+
 
 function exiting {
     echo "Do you want to do another operation? (Y/N)"
