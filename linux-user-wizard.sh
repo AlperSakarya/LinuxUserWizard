@@ -8,6 +8,11 @@ Please try again, this time using 'sudo'. Exiting."
         exit
 fi
 
+  YUM_CMD=$(which yum)
+  APT_GET_CMD=$(which apt-get)
+
+
+
 function initializelogs {
     if [ ! -f /var/log/luw.log ]
         then
@@ -77,25 +82,36 @@ function ctrl_c() {
 }
 
 clear
-echo       "##################################################"
-echo       "        ***** LINUX USER WIZARD *****            #"
-echo       "##################################################"
-echo       "                                                 #"
-echo       " - Create a user with SSH key         - Press 1  #"
-echo       " - Remove a user and keys             - Press 2  #"
-echo       " - Enable password login with no key  - Press 3  #"
-echo       " - Disable password login with no key - Press 4  #"
-echo       " - View users with a shell            - Press 5  #"
-echo       " - View user's private key            - Press 6  #"
-echo       " - View logs                          - Press 7  #"
-echo       " - Delete/Re-initialize logs          - Press 8  #"
-echo       " - Exit                               - Press 9  #"
-echo       "                                                 #"
-echo       "##################################################"
-echo       "                                                 "
-echo       " - L.U.W. logs:/var/log/luw.log"
-echo       "                                                 "
-echo       "   Select a number and hit 'Enter' "
+echo       "#########################################################"
+echo       "#              ***** LINUX USER WIZARD *****            #"
+echo       "#########################################################"
+echo       "#                                                       #"
+echo       "# - Create a user with SSH key              - Press 1   #"
+echo       "# - Remove a user and keys                  - Press 2   #"
+echo       "# - Enable password login with no key       - Press 3   #"
+echo       "# - Disable password login with no key      - Press 4   #"
+echo       "# - View users with a shell                 - Press 5   #"
+echo       "# - View user's private key                 - Press 6   #"
+echo       "# - View logs                               - Press 7   #"
+echo       "# - Delete/Re-initialize logs               - Press 8   #"
+echo       "# - Exit                                    - Press 9   #"
+echo       "#                                                       #"
+echo       "#########################################################"
+echo       "#                ***** AWS TOOLBOX  *****               #"
+echo       "#########################################################"
+echo       "#                                                       #"
+echo       "# - Install latest AWS CLI                  - Press 10  #"
+echo       "# - Install/Configure systat SAR            - Press 11  #"
+echo       "# - Install/Configure CloudWatch Logs Agent - Press 12  #"
+echo       "# - Generate SOS report for AWS Support     - Press 13  #"
+echo       "# - Install/Configure Java                  - Press 14  #"
+echo       "# - Install/Configure Import/Export tool    - Press 15  #"
+echo       "#                                                       #"
+echo       "#########################################################"
+echo       "                                                        "
+echo       " - L.U.W. logs:/var/log/luw.log                         "
+echo       "                                                        "
+echo       "   Select a number and hit 'Enter'                      "
 
 read answer
 
@@ -227,6 +243,32 @@ fi
 
 if [ "$answer" = "9" ]
     then
+        echo $YUM_CMD > /dev/null
+        echo $APT_GET_CMD > /dev/null
+        if [[ ! -z $YUM_CMD ]]
+            then
+                yum install unzip -y
+                echo "yum installer is in use"
+                #yum install $YUM_PACKAGE_NAME
+        elif [[ ! -z $APT_GET_CMD ]]
+            then
+                apt-get install unzip
+                echo "apt get is in use"
+                #apt-get $DEB_PACKAGE_NAME
+        else
+            echo "Cand find package manager"
+        fi
+    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+    unzip awscli-bundle.zip
+    bash ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+    rm -f awscli-bundle.zip
+    echo "Please issue 'aws configure' command after closing this tool"
+    exiting
+fi
+
+
+if [ "$answer" = "10" ]
+    then
         echo ""
         echo "GOOD BYE -- LinuxUserWizard"
         echo ""
@@ -234,9 +276,12 @@ if [ "$answer" = "9" ]
 fi
 
 
-if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$answer" != "4" ] && [ "$answer" != "5" ] && [ "$answer" != "6" ]
+
+if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$answer" != "4" ] && [ "$answer" != "5" ] && [ "$answer" != "6" ] \
+&& [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ]
     then
         bash ./linux-user-wizard.sh
 fi
+
 
 
