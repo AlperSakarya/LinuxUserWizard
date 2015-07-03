@@ -11,4 +11,4 @@ Python: `sudo python linux-user-wizard.py`
 
 
 ### Screenshot: 
-http://imgur.com/TpO6qTC
+http://imgur.com/9G2PNlx
