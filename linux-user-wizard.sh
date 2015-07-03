@@ -8,7 +8,6 @@ Please try again, this time using 'sudo'. Exiting."
         exit
 fi
 
-
 function exiting {
     echo "Do you want to do another operation? (Y/N)"
     read exitanswer
@@ -17,7 +16,10 @@ function exiting {
             bash ./linux-user-wizard.sh
     elif [ "$exitanswer" = "n" ] || [ "$exitanswer" = "N" ]
         then
-            echo "GOOD BYE"
+            echo ""
+            echo "GOOD BYE -- LinuxUserWizard"
+            echo ""
+            exit
     else
         echo "Wrong option, please enter 'Y' or 'N'"
     exiting
@@ -30,7 +32,6 @@ function wrongoption {
 
 }
 
-
 function keypairgen {
     ssh-keygen -t rsa
     mv /root/.ssh/id_rsa* /home/$luwuser
@@ -38,6 +39,19 @@ function keypairgen {
     chown -R $luwuser /home/$luwuser
     chmod 600 /home/$luwuser/.ssh/authorized_keys
 
+}
+
+function sshdirmake {
+    mkdir /home/$luwuser/.ssh
+    touch /home/$luwuser/.ssh/authorized_keys
+}
+
+trap ctrl_c INT
+function ctrl_c() {
+        echo ""
+        echo "GOOD BYE -- LinuxUserWizard"
+        echo ""
+        exit
 }
 
 clear
@@ -50,7 +64,7 @@ echo       " - Remove a user and keys             - Press 2  #"
 echo       " - Enable password login with no key  - Press 3  #"
 echo       " - Disable password login with no key - Press 4  #"
 echo       " - View users with a shell            - Press 5  #"
-echo       " - View user's prvivte key            - Press 6  #"
+echo       " - View user's private key            - Press 6  #"
 echo       " - Exit                               - Press 7  #"
 echo       "                                                 #"
 echo       "##################################################"
@@ -72,8 +86,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 then
                     rm -rf /home/$luwuser
                     useradd $luwuser -s /bin/bash
-                    mkdir /home/$luwuser/.ssh
-                    touch /home/$luwuser/.ssh/authorized_keys
+                    sshdirmake
                     keypairgen
                     exiting
             else
@@ -97,11 +110,9 @@ if [ "$answer" = "1" ] ### OPTION 1 START
     	        then
     	            mkdir /home/$luwuser # check due ubuntu does not create home folder on user creation
     	    fi
-            mkdir /home/$luwuser/.ssh
-	        touch /home/$luwuser/.ssh/authorized_keys
+            sshdirmake
             keypairgen
-            exiting    
-
+            exiting
     fi
 fi ### OPTION 1 END
 
@@ -124,22 +135,42 @@ fi ### OPTION 2 END
 
 if [ "$answer" = "3" ] ### OPTION 3 START
     then
-        echo "not ready yet"
-        exiting
+        if [ -f /etc/ssh/sshd_config ]
+            then
+                sed -i 's/#PasswordAuthentication/PasswordAuthentication/' /etc/ssh/sshd_config
+                echo "SSH with password is enabled"
+                service sshd restart
+                service ssh restart
+                exiting
+        else
+            echo "sshd_config file is not under /etc/ssh, please edit manually and set
+#PasswordAuthentication yes to PasswordAuthentication yes | remove # (uncomment)"
+            exiting
+        fi
 fi ### OPTION 3 END
 
 
-if [ "$answer" = "4" ]
+if [ "$answer" = "4" ] ### OPTION 4 START
     then
-        echo "not ready yet"
-        exiting
-fi
+        if [ -f /etc/ssh/sshd_config ]
+            then
+                sed -i 's/PasswordAuthentication/#PasswordAuthentication/' /etc/ssh/sshd_config
+                echo "SSH with password is disabled"
+                service sshd restart
+                service ssh restart
+                exiting
+        else
+            echo "sshd_config file is not under /etc/ssh, please edit manually and set
+#PasswordAuthentication yes to PasswordAuthentication yes | remove # (uncomment)"
+            exiting
+        fi
+fi ### OPTION 4 END
 
 
 if [ "$answer" = "5" ]
     then
         cat /etc/passwd | grep /bin/bash | less
-        ./linux-user-wizard.sh
+        bash ./linux-user-wizard.sh
 fi
 
 
@@ -160,7 +191,9 @@ fi
 
 if [ "$answer" = "7" ]
     then
-        echo "GOOD BYE"
+        echo ""
+        echo "GOOD BYE -- LinuxUserWizard"
+        echo ""
         exit
 fi
 
