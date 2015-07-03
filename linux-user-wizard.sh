@@ -8,6 +8,22 @@ Please try again, this time using 'sudo'. Exiting."
         exit
 fi
 
+function initializelogs {
+    if [ ! -f /var/log/luw.log ]
+        then
+            touch /var/log/luw.log
+            echo "################################" >> /var/log/luw.log
+            echo `date` -- "Log file initiated"  >> /var/log/luw.log
+            echo "################################" >> /var/log/luw.log
+fi
+}
+
+initializelogs # initializing the log file at launch
+
+function logentry {
+    echo `date` "|" "Operation: "$logoperation "|" "User: "$luwuser >> /var/log/luw.log
+}
+
 function exiting {
     echo "Do you want to do another operation? (Y/N)"
     read exitanswer
@@ -38,12 +54,18 @@ function keypairgen {
     cat /home/$luwuser/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
     chown -R $luwuser /home/$luwuser
     chmod 600 /home/$luwuser/.ssh/authorized_keys
+    logoperation="SSH key generated"
+    logentry
 
 }
 
 function sshdirmake {
     mkdir /home/$luwuser/.ssh
+    logoperation="SSH directory created"
+    logentry
     touch /home/$luwuser/.ssh/authorized_keys
+    logoperation="authorized_keys file created"
+    logentry
 }
 
 trap ctrl_c INT
@@ -65,7 +87,9 @@ echo       " - Enable password login with no key  - Press 3  #"
 echo       " - Disable password login with no key - Press 4  #"
 echo       " - View users with a shell            - Press 5  #"
 echo       " - View user's private key            - Press 6  #"
-echo       " - Exit                               - Press 7  #"
+echo       " - View logs                          - Press 7  #"
+echo       " - Delete/Re-initialize logs          - Press 8  #"
+echo       " - Exit                               - Press 9  #"
 echo       "                                                 #"
 echo       "##################################################"
 echo       "                                                 "
@@ -84,7 +108,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
             read homefolderanswer
             if [ "$homefolderanswer" = "y" ] || [ "$homefolderanswer" = "Y" ]
                 then
-                    rm -rf /home/$luwuser
+                    rm -rf /home/$luwuser && logoperation="Homefolder deleted" && logentry
                     useradd $luwuser -s /bin/bash
                     sshdirmake
                     keypairgen
@@ -105,10 +129,10 @@ if [ "$answer" = "1" ] ### OPTION 1 START
 
     if [ ! -d /home/$luwuser ]
         then
-    	    useradd $luwuser -s /bin/bash
-    	    if [ ! -d /home/$luwuser ]
+    	    useradd $luwuser -s /bin/bash && logoperation="New user added" && logentry
+    	    if [ ! -d /home/$luwuser ] # check due ubuntu does not create home folder on user creation
     	        then
-    	            mkdir /home/$luwuser # check due ubuntu does not create home folder on user creation
+    	            mkdir /home/$luwuser && logoperation="Homefolder created" && logentry
     	    fi
             sshdirmake
             keypairgen
@@ -123,11 +147,11 @@ if [ "$answer" = "2" ] ### OPTION 2 START
         read luwuser
         if [ -d /home/$luwuser ]
             then
-                userdel -r $luwuser
+                userdel -r $luwuser && logoperation="User deleted" && logentry
                 echo "User and homefolder deleted"
                 exiting
         else
-            echo "Home folder does not exist"
+            echo "Home folder does not exist" && logoperation="Homefolder could not be found" && logentry
             exiting
         fi
 fi ### OPTION 2 END
@@ -137,14 +161,14 @@ if [ "$answer" = "3" ] ### OPTION 3 START
     then
         if [ -f /etc/ssh/sshd_config ]
             then
-                sed -i 's/#PasswordAuthentication/PasswordAuthentication/' /etc/ssh/sshd_config
+                sed -i 's/#PasswordAuthentication/PasswordAuthentication/' /etc/ssh/sshd_config && logoperation="SSH via password enabled" && logentry
                 echo "SSH with password is enabled"
                 service sshd restart
                 service ssh restart
                 exiting
         else
             echo "sshd_config file is not under /etc/ssh, please edit manually and set
-#PasswordAuthentication yes to PasswordAuthentication yes | remove # (uncomment)"
+#PasswordAuthentication yes to PasswordAuthentication yes | remove # (uncomment)" && logoperation="sshd_config can't be found" && logentry
             exiting
         fi
 fi ### OPTION 3 END
@@ -154,14 +178,14 @@ if [ "$answer" = "4" ] ### OPTION 4 START
     then
         if [ -f /etc/ssh/sshd_config ]
             then
-                sed -i 's/PasswordAuthentication/#PasswordAuthentication/' /etc/ssh/sshd_config
+                sed -i 's/PasswordAuthentication/#PasswordAuthentication/' /etc/ssh/sshd_config && logoperation="SSH via password disabled" && logentry
                 echo "SSH with password is disabled"
                 service sshd restart
                 service ssh restart
                 exiting
         else
             echo "sshd_config file is not under /etc/ssh, please edit manually and set
-#PasswordAuthentication yes to PasswordAuthentication yes | remove # (uncomment)"
+#PasswordAuthentication yes to PasswordAuthentication yes | remove # (uncomment)" && logoperation="sshd_config can't be found" && logentry
             exiting
         fi
 fi ### OPTION 4 END
@@ -169,7 +193,7 @@ fi ### OPTION 4 END
 
 if [ "$answer" = "5" ]
     then
-        cat /etc/passwd | grep /bin/bash | less
+        cat /etc/passwd | grep /bin/bash | less && logoperation="Viewed users with shell" && logentry
         bash ./linux-user-wizard.sh
 fi
 
@@ -180,16 +204,28 @@ if [ "$answer" = "6" ]
         read keyviewuser
     if [ -f /home/$keyviewuser/id_rsa ]
         then
-            cat /home/$keyviewuser/id_rsa | less
+            cat /home/$keyviewuser/id_rsa | less && logoperation="Private Key viewed" && logentry
             exiting
     else
-        echo "Private key is not under" /home/$keyviewuser "or not named id_rsa"
+        echo "Private key is not under" /home/$keyviewuser "or not named id_rsa" && logoperation="Private key can't be found" && logentry
         exiting
     fi
 fi
 
-
 if [ "$answer" = "7" ]
+    then
+        logoperation="Viewed logs" && logentry && less /var/log/luw.log
+        bash ./linux-user-wizard.sh
+fi
+
+if [ "$answer" = "8" ]
+    then
+        rm -f /var/log/luw.log
+        initializelogs
+        exiting
+fi
+
+if [ "$answer" = "9" ]
     then
         echo ""
         echo "GOOD BYE -- LinuxUserWizard"
