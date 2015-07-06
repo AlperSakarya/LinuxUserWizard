@@ -73,6 +73,25 @@ function sshdirmake {
     logentry
 }
 
+function packageinstaller {
+    echo $YUM_CMD > /dev/null
+    echo $APT_GET_CMD > /dev/null
+    if [[ ! -z $YUM_CMD ]]
+        then
+            echo "Using 'yum' to install the requirements.." && sleep 2
+            yum -y install $packagetoinstall
+            #yum install $YUM_PACKAGE_NAME
+    elif [[ ! -z $APT_GET_CMD ]]
+        then
+            echo "Using 'apt-get' to install the requirements.." && sleep 2
+            apt-get install $packagetoinstall -y
+            #apt-get $DEB_PACKAGE_NAME
+    else
+        echo "Can't find package manager" && sleep 2
+        exiting
+    fi
+}
+
 trap ctrl_c INT
 function ctrl_c() {
         echo ""
@@ -105,7 +124,6 @@ echo       "# - Install/Configure systat SAR            - Press 11  #"
 echo       "# - Install/Configure CloudWatch Logs Agent - Press 12  #"
 echo       "# - Generate SOS report for AWS Support     - Press 13  #"
 echo       "# - Install/Configure Java                  - Press 14  #"
-echo       "# - Install/Configure Import/Export tool    - Press 15  #"
 echo       "#                                                       #"
 echo       "#########################################################"
 echo       "                                                        "
@@ -243,21 +261,15 @@ fi
 
 if [ "$answer" = "9" ]
     then
-        echo $YUM_CMD > /dev/null
-        echo $APT_GET_CMD > /dev/null
-        if [[ ! -z $YUM_CMD ]]
-            then
-                yum install unzip -y
-                echo "yum installer is in use"
-                #yum install $YUM_PACKAGE_NAME
-        elif [[ ! -z $APT_GET_CMD ]]
-            then
-                apt-get install unzip
-                echo "apt get is in use"
-                #apt-get $DEB_PACKAGE_NAME
-        else
-            echo "Cand find package manager"
-        fi
+        echo ""
+        echo "GOOD BYE -- LinuxUserWizard"
+        echo ""
+        exit
+fi
+
+if [ "$answer" = "10" ]
+    then
+    packagetoinstall="unzip" && packageinstaller
     curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
     unzip awscli-bundle.zip
     bash ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
@@ -266,19 +278,40 @@ if [ "$answer" = "9" ]
     exiting
 fi
 
-
-if [ "$answer" = "10" ]
+if [ "$answer" = "11" ]
     then
-        echo ""
-        echo "GOOD BYE -- LinuxUserWizard"
-        echo ""
-        exit
+        #packagetoinstall="sysstat" && packageinstaller
+        sed -i 's/ENABLED="false"/ENABLED="true"/' /etc/default/sysstat
+        sed -i 's/5-55\/10/*\/2/' /etc/cron.d/sysstat
+        service sysstat restart
+        echo "SYSSTAT installed & configured"
+        echo "SAR logs are under /var/log/sa and will be kept in rotation for 30 days" && sleep 2
+        exiting
 fi
 
+if [ "$answer" = "12" ]
+    then
+        echo "Coming soon."
+        exiting
+fi
 
+if [ "$answer" = "13" ]
+    then
+        wget -q -O ginfo.sh 'http://bit.ly/1scykJV'
+        chmod 755 ginfo.sh
+        ./ginfo.sh
+        exiting
+fi
+
+if [ "$answer" = "14" ]
+    then
+        echo "Coming soon."
+        exiting
+fi
 
 if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$answer" != "4" ] && [ "$answer" != "5" ] && [ "$answer" != "6" ] \
-&& [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ]
+&& [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ] && [ "$answer" != "11" ] && [ "$answer" != "12" ] \
+ && [ "$answer" != "13" ] && [ "$answer" != "14" ] && [ "$answer" != "15" ]
     then
         bash ./linux-user-wizard.sh
 fi
