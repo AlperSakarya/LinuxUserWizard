@@ -272,9 +272,17 @@ if [ "$answer" = "10" ]
     packagetoinstall="unzip" && packageinstaller
     curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
     unzip awscli-bundle.zip
-    bash ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+    echo "Would you like to configure AWS CLI now? (y/n)"
+        read awsclians
+	if [ "$awsclians" = "y" ] || [ "$awsclians" = "Y" ]
+	    then
+	        aws configure && exiting
+	    else
+	        echo "Please issue 'aws configure' command after closing this tool"
+		exiting
+	fi
     rm -f awscli-bundle.zip
-    echo "Please issue 'aws configure' command after closing this tool"
     exiting
 fi
 
