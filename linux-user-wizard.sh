@@ -182,7 +182,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
             keypairgen
             exiting
     fi
-fi ### OPTION 1 END
+fi ### OPTION 1 END 
 
 
 if [ "$answer" = "2" ] ### OPTION 2 START
