@@ -154,6 +154,9 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 read keyans
                 if [ "$keyans" = "y" ] || [ "$keyans" = "Y" ]
                     then
+                    if [ ! -d /home/$luwuser/.ssh]
+                        sshdirmake
+                    fi
                     keypairgen
                 fi
 	   	    exiting
