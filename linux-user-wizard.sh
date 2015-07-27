@@ -54,30 +54,25 @@ function wrongoption {
 
 }
 
-function sshdirmake {
-    su $luwuser
-    mkdir /home/$luwuser/.ssh
-    logoperation="SSH directory created"
-    exit
-    logentry
-    su $luwuser
-    touch /home/$luwuser/.ssh/authorized_keys
-    exit
-    logoperation="authorized_keys file created"
-    logentry
-}
-
 function keypairgen {
-    su $luwuser
-    ssh-keygen -t rsa -f $HOME/.ssh/id_rsa -q -N ""
-    cat /home/$luwuser/.ssh/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
-    exit
+    ssh-keygen -t rsa
+    mv /root/.ssh/id_rsa* /home/$luwuser
+    cat /home/$luwuser/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
+    chown -R $luwuser /home/$luwuser
     chmod 600 /home/$luwuser/.ssh/authorized_keys
     logoperation="SSH key generated"
     logentry
 
 }
 
+function sshdirmake {
+    mkdir /home/$luwuser/.ssh
+    logoperation="SSH directory created"
+    logentry
+    touch /home/$luwuser/.ssh/authorized_keys
+    logoperation="authorized_keys file created"
+    logentry
+}
 
 function packageinstaller {
     echo $YUM_CMD > /dev/null
@@ -150,7 +145,6 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 then
                     rm -rf /home/$luwuser && logoperation="Homefolder deleted" && logentry
                     useradd $luwuser -s /bin/bash
-                    chown -R $luwuser /home/$luwuser
                     sshdirmake
                     keypairgen
                     exiting
@@ -161,7 +155,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 read keyans
                 if [ "$keyans" = "y" ] || [ "$keyans" = "Y" ]
                     then
-                    if [ ! -d /home/$luwuser/.ssh]
+                    if [ ! -d /home/$luwuser/.ssh]; then
                         sshdirmake
                     fi
                     keypairgen
@@ -182,7 +176,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
             keypairgen
             exiting
     fi
-fi ### OPTION 1 END 
+fi ### OPTION 1 END
 
 
 if [ "$answer" = "2" ] ### OPTION 2 START
