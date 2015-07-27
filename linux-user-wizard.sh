@@ -8,9 +8,10 @@ Please try again, this time using 'sudo'. Exiting."
         exit
 fi
 
-  YUM_CMD=$(which yum)
-  APT_GET_CMD=$(which apt-get)
-
+###################################################################################
+YUM_CMD=$(which yum)
+APT_GET_CMD=$(which apt-get)
+###################################################################################
 
 
 function initializelogs {
@@ -53,25 +54,30 @@ function wrongoption {
 
 }
 
+function sshdirmake {
+    su $luwuser
+    mkdir /home/$luwuser/.ssh
+    logoperation="SSH directory created"
+    exit
+    logentry
+    su $luwuser
+    touch /home/$luwuser/.ssh/authorized_keys
+    exit
+    logoperation="authorized_keys file created"
+    logentry
+}
+
 function keypairgen {
-    ssh-keygen -t rsa
-    mv /root/.ssh/id_rsa* /home/$luwuser
-    cat /home/$luwuser/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
-    chown -R $luwuser /home/$luwuser
+    su $luwuser
+    ssh-keygen -t rsa -f $HOME/.ssh/id_rsa -q -N ""
+    cat /home/$luwuser/.ssh/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
+    exit
     chmod 600 /home/$luwuser/.ssh/authorized_keys
     logoperation="SSH key generated"
     logentry
 
 }
 
-function sshdirmake {
-    mkdir /home/$luwuser/.ssh
-    logoperation="SSH directory created"
-    logentry
-    touch /home/$luwuser/.ssh/authorized_keys
-    logoperation="authorized_keys file created"
-    logentry
-}
 
 function packageinstaller {
     echo $YUM_CMD > /dev/null
@@ -144,6 +150,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 then
                     rm -rf /home/$luwuser && logoperation="Homefolder deleted" && logentry
                     useradd $luwuser -s /bin/bash
+                    chown -R $luwuser /home/$luwuser
                     sshdirmake
                     keypairgen
                     exiting
