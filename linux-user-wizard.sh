@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 #set -x
 
-if ! [ $(id -u) = 0 ]
-    then
-        echo "Tou need to have root privileges to run this script
-Please try again, this time using 'sudo'. Exiting."
-        exit
-fi
+# Checking if script is running as root
+function checkroot {
+    if ! [ $(id -u) = 0 ]
+        then
+            echo "Tou need to have root privileges to run this script
+    Please try again, this time using 'sudo'. Exiting."
+            exit
+    fi
+}
+checkroot
 
-###################################################################################
+# Mapping distro identification commands
 YUM_CMD=$(which yum)
 APT_GET_CMD=$(which apt-get)
-###################################################################################
-
 
 function initializelogs {
     if [ ! -f /var/log/luw.log ]
@@ -21,7 +23,7 @@ function initializelogs {
             echo "################################" >> /var/log/luw.log
             echo `date` -- "Log file initiated"  >> /var/log/luw.log
             echo "################################" >> /var/log/luw.log
-fi
+    fi
 }
 
 initializelogs # initializing the log file at launch
@@ -54,17 +56,6 @@ function wrongoption {
 
 }
 
-function keypairgen {
-    ssh-keygen -t rsa
-    mv /root/.ssh/id_rsa* /home/$luwuser
-    cat /home/$luwuser/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
-    chown -R $luwuser /home/$luwuser
-    chmod 600 /home/$luwuser/.ssh/authorized_keys
-    logoperation="SSH key generated"
-    logentry
-
-}
-
 function sshdirmake {
     mkdir /home/$luwuser/.ssh
     logoperation="SSH directory created"
@@ -72,6 +63,16 @@ function sshdirmake {
     touch /home/$luwuser/.ssh/authorized_keys
     logoperation="authorized_keys file created"
     logentry
+}
+
+function keypairgen {
+    ssh-keygen -t rsa -f /home/$luwuser/.ssh/id_rsa -q -N ""
+    #mv /root/.ssh/id_rsa* /home/$luwuser
+    cat /home/$luwuser/.ssh/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
+    chmod 600 /home/$luwuser/.ssh/authorized_keys
+    logoperation="SSH key generated"
+    logentry
+
 }
 
 function packageinstaller {
@@ -145,6 +146,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 then
                     rm -rf /home/$luwuser && logoperation="Homefolder deleted" && logentry
                     useradd $luwuser -s /bin/bash
+                    chown -R $luwuser /home/$luwuser
                     sshdirmake
                     keypairgen
                     exiting
@@ -185,11 +187,16 @@ if [ "$answer" = "2" ] ### OPTION 2 START
         read luwuser
         if [ -d /home/$luwuser ]
             then
-                userdel -r $luwuser && logoperation="User deleted" && logentry
-                echo "User and homefolder deleted"
+                userdel -r $luwuser
+                sed -i 's/'$luwuser'//g' /etc/passwd
+                rm -rf /home/$luwuser
+                echo "User homefolder deleted"
+                logoperation="User deleted" && logentry
                 exiting
         else
-            echo "Home folder does not exist" && logoperation="Homefolder could not be found" && logentry
+            sed -i 's/'$luwuser'//g' /etc/passwd
+            echo "Home folder does not exist"
+            logoperation="Homefolder could not be found" && logentry
             exiting
         fi
 fi ### OPTION 2 END
