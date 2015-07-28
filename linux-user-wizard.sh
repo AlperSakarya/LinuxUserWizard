@@ -16,6 +16,17 @@ checkroot
 YUM_CMD=$(which yum)
 APT_GET_CMD=$(which apt-get)
 
+
+# Capture Ctrl + C 
+trap ctrl_c INT
+function ctrl_c() {
+        echo ""
+        echo "GOOD BYE -- LinuxUserWizard"
+        echo ""
+        exit
+}
+
+# Initialize logs at the script launch, if log file is not there
 function initializelogs {
     if [ ! -f /var/log/luw.log ]
         then
@@ -94,13 +105,7 @@ function packageinstaller {
     fi
 }
 
-trap ctrl_c INT
-function ctrl_c() {
-        echo ""
-        echo "GOOD BYE -- LinuxUserWizard"
-        echo ""
-        exit
-}
+
 
 clear
 echo       "#########################################################"
@@ -267,6 +272,7 @@ if [ "$answer" = "8" ]
     then
         rm -f /var/log/luw.log
         initializelogs
+        echo "Logs has been deleted and re-initialized"
         exiting
 fi
 
@@ -330,7 +336,7 @@ fi
 
 if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$answer" != "4" ] && [ "$answer" != "5" ] && [ "$answer" != "6" ] \
 && [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ] && [ "$answer" != "11" ] && [ "$answer" != "12" ] \
- && [ "$answer" != "13" ] && [ "$answer" != "14" ] && [ "$answer" != "15" ]
+ && [ "$answer" != "13" ] && [ "$answer" != "14" ]
     then
         bash ./linux-user-wizard.sh
 fi
