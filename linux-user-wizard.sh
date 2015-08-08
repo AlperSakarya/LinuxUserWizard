@@ -48,7 +48,7 @@ function exiting {
     read exitanswer
     if [ "$exitanswer" = "y" ] || [ "$exitanswer" = "Y" ]
         then
-            bash ./linux-user-wizard.sh
+            mainmenu
     elif [ "$exitanswer" = "n" ] || [ "$exitanswer" = "N" ]
         then
             echo ""
@@ -78,9 +78,9 @@ function sshdirmake {
 
 function keypairgen {
     ssh-keygen -t rsa -f /home/$luwuser/.ssh/id_rsa -q -N ""
-    #mv /root/.ssh/id_rsa* /home/$luwuser
     cat /home/$luwuser/.ssh/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
     chmod 600 /home/$luwuser/.ssh/authorized_keys
+    chown -R $luwuser /home/$luwuser
     logoperation="SSH key generated"
     logentry
 
@@ -106,6 +106,7 @@ function packageinstaller {
 }
 
 
+function mainmenu {
 
 clear
 echo       "#########################################################"
@@ -140,6 +141,10 @@ echo       "   Select a number and hit 'Enter'                      "
 
 read answer
 
+
+
+
+
 if [ "$answer" = "1" ] ### OPTION 1 START
     then
         echo "Please enter a username"
@@ -167,18 +172,18 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                     fi
                     keypairgen
                 fi
-	   	    exiting
+            exiting
             fi
         fi
 
 
     if [ ! -d /home/$luwuser ]
         then
-    	    useradd $luwuser -s /bin/bash && logoperation="New user added" && logentry
-    	    if [ ! -d /home/$luwuser ] # check due ubuntu does not create home folder on user creation
-    	        then
-    	            mkdir /home/$luwuser && logoperation="Homefolder created" && logentry
-    	    fi
+            useradd $luwuser -s /bin/bash && logoperation="New user added" && logentry
+            if [ ! -d /home/$luwuser ] # check due ubuntu does not create home folder on user creation
+                then
+                    mkdir /home/$luwuser && logoperation="Homefolder created" && logentry
+            fi
             sshdirmake
             keypairgen
             exiting
@@ -195,8 +200,10 @@ if [ "$answer" = "2" ] ### OPTION 2 START
                 userdel -r $luwuser
                 sed -i 's/'$luwuser'//g' /etc/passwd
                 rm -rf /home/$luwuser
-                echo "User homefolder deleted"
-                logoperation="User deleted" && logentry
+                if [ ! -d /home/$luwuser ]; then
+                    echo "User homefolder deleted"
+                    logoperation="User deleted" && logentry
+                fi
                 exiting
         else
             sed -i 's/'$luwuser'//g' /etc/passwd
@@ -244,7 +251,7 @@ fi ### OPTION 4 END
 if [ "$answer" = "5" ]
     then
         cat /etc/passwd | grep /bin/bash | less && logoperation="Viewed users with shell" && logentry
-        bash ./linux-user-wizard.sh
+        mainmenu
 fi
 
 
@@ -265,7 +272,7 @@ fi
 if [ "$answer" = "7" ]
     then
         logoperation="Viewed logs" && logentry && less /var/log/luw.log
-        bash ./linux-user-wizard.sh
+        mainmenu
 fi
 
 if [ "$answer" = "8" ]
@@ -292,13 +299,13 @@ if [ "$answer" = "10" ]
     ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
     echo "Would you like to configure AWS CLI now? (y/n)"
         read awsclians
-	if [ "$awsclians" = "y" ] || [ "$awsclians" = "Y" ]
-	    then
-	        aws configure && exiting
-	    else
-	        echo "Please issue 'aws configure' command after closing this tool"
-		exiting
-	fi
+    if [ "$awsclians" = "y" ] || [ "$awsclians" = "Y" ]
+        then
+            aws configure && exiting
+        else
+            echo "Please issue 'aws configure' command after closing this tool"
+        exiting
+    fi
     rm -f awscli-bundle.zip
     exiting
 fi
@@ -338,8 +345,13 @@ if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$a
 && [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ] && [ "$answer" != "11" ] && [ "$answer" != "12" ] \
  && [ "$answer" != "13" ] && [ "$answer" != "14" ]
     then
-        bash ./linux-user-wizard.sh
+        mainmenu
 fi
+
+}
+
+mainmenu
+
 
 
 
