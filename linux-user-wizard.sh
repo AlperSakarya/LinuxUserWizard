@@ -105,6 +105,22 @@ function packageinstaller {
     fi
 }
 
+function sudoprivilage {
+    if grep -Fxq "$luwuser" /etc/sudoers
+        then
+        echo "User is already in /etc/sudoers"
+    else
+        echo "Would you like to give SUDO privilages (administrative access) to this user? (y\n) \n"
+        read sudoanswer
+        if [ $sudoanswer = "y" ] || [ $sudoanswer = "Y" ]
+            then
+                echo "$luwuser    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+            else
+                echo "User will be left with no sudo access"
+        fi
+    fi
+}
+
 
 function mainmenu {
 
@@ -159,6 +175,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                     chown -R $luwuser /home/$luwuser
                     sshdirmake
                     keypairgen
+                    sudoprivilage
                     exiting
             else
                 echo "Not creating the user since you want to keep the homefolder"
@@ -172,6 +189,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                     fi
                     keypairgen
                 fi
+            sudoprivilage    
             exiting
             fi
         fi
@@ -186,6 +204,7 @@ if [ "$answer" = "1" ] ### OPTION 1 START
             fi
             sshdirmake
             keypairgen
+            sudoprivilage
             exiting
     fi
 fi ### OPTION 1 END
