@@ -54,6 +54,7 @@ function exiting {
             echo ""
             echo "GOOD BYE -- LinuxUserWizard"
             echo ""
+            logoperation="Exited the program" && logentry
             exit
     else
         echo "Wrong option, please enter 'Y' or 'N'"
@@ -217,8 +218,8 @@ if [ "$answer" = "2" ] ### OPTION 2 START
         if [ -d /home/$luwuser ]
             then
                 userdel -r $luwuser
-                sed -i 's/'$luwuser'//g' /etc/passwd
-                sed -i "/\b\$luwuser\b/d" /etc/sudoers
+                sed '$luwuser/d' /etc/passwd
+                sed '$luwuser/d' /etc/sudoers
                 rm -rf /home/$luwuser
                 if [ ! -d /home/$luwuser ]; then
                     echo "User homefolder deleted"
@@ -226,8 +227,8 @@ if [ "$answer" = "2" ] ### OPTION 2 START
                 fi
                 exiting
         else
-            sed -i 's/'$luwuser'//g' /etc/passwd
-            sed -i "/\b\$luwuser\b/d" /etc/sudoers
+            sed '$luwuser/d' /etc/passwd
+            sed '$luwuser/d' /etc/sudoers
             echo "Home folder does not exist"
             logoperation="Homefolder could not be found" && logentry
             exiting
@@ -315,19 +316,20 @@ fi
 if [ "$answer" = "10" ]
     then
     packagetoinstall="unzip" && packageinstaller
-    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
-    unzip awscli-bundle.zip
-    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "/tmp/awscli-bundle.zip"
+    unzip /tmp/awscli-bundle.zip
+    ./tmp/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
     echo "Would you like to configure AWS CLI now? (y/n)"
         read awsclians
     if [ "$awsclians" = "y" ] || [ "$awsclians" = "Y" ]
         then
-            aws configure && exiting
+            aws configure && logoperation="AWS CLI Installed" && logentry && exiting
         else
             echo "Please issue 'aws configure' command after closing this tool"
+            logoperation="AWS CLI Installed" && logentry
         exiting
     fi
-    rm -f awscli-bundle.zip
+    rm -f /tmp/awscli-bundle.zip
     exiting
 fi
 
