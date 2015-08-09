@@ -218,6 +218,7 @@ if [ "$answer" = "2" ] ### OPTION 2 START
             then
                 userdel -r $luwuser
                 sed -i 's/'$luwuser'//g' /etc/passwd
+                sed -i "/\b\$luwuser\b/d" /etc/sudoers
                 rm -rf /home/$luwuser
                 if [ ! -d /home/$luwuser ]; then
                     echo "User homefolder deleted"
@@ -226,6 +227,7 @@ if [ "$answer" = "2" ] ### OPTION 2 START
                 exiting
         else
             sed -i 's/'$luwuser'//g' /etc/passwd
+            sed -i "/\b\$luwuser\b/d" /etc/sudoers
             echo "Home folder does not exist"
             logoperation="Homefolder could not be found" && logentry
             exiting
