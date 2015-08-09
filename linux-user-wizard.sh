@@ -280,9 +280,9 @@ if [ "$answer" = "6" ]
     then
         echo "Please enter the username to view it's private key"
         read keyviewuser
-    if [ -f /home/$keyviewuser/id_rsa ]
+    if [ -f /home/$keyviewuser/.ssh/id_rsa ]
         then
-            cat /home/$keyviewuser/id_rsa | less && logoperation="Private Key viewed" && logentry
+            cat /home/$keyviewuser/.ssh/id_rsa | less && logoperation="Private Key viewed" && logentry
             exiting
     else
         echo "Private key is not under" /home/$keyviewuser "or not named id_rsa" && logoperation="Private key can't be found" && logentry
