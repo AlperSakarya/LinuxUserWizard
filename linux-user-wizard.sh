@@ -111,7 +111,7 @@ function sudoprivilage {
         then
         echo "User is already in /etc/sudoers"
     else
-        echo "Would you like to give SUDO privilages (administrative access) to this user? (y\n) \n"
+        echo "Would you like to give SUDO privilages (administrative access) to this user? (y\n)"
         read sudoanswer
         if [ $sudoanswer = "y" ] || [ $sudoanswer = "Y" ]
             then
@@ -225,10 +225,18 @@ if [ "$answer" = "2" ] ### OPTION 2 START
                     echo "User homefolder deleted"
                     logoperation="User deleted" && logentry
                 fi
+		if [ -f /var/spool/mail/$luwuser ]; then
+		    rm -rf /var/spool/mail/$luwuser
+		    echo "Mail file removed"
+		fi
                 exiting
         else
             sed -i '/$luwuser/d' /etc/passwd
             sed -i '/$luwuser/d' /etc/sudoers
+            if [ -f /var/spool/mail/$luwuser ]; then
+		rm -rf /var/spool/mail/$luwuser
+                echo "Mail file removed"
+	    fi
             echo "Home folder does not exist"
             logoperation="Homefolder could not be found" && logentry
             exiting
