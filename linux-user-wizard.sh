@@ -148,6 +148,7 @@ echo       "# - Install/Configure systat SAR            - Press 11  #"
 echo       "# - Install/Configure CloudWatch Logs Agent - Press 12  #"
 echo       "# - Generate SOS report for AWS Support     - Press 13  #"
 echo       "# - Install/Configure Java                  - Press 14  #"
+echo       "# - Install/Compile iPerf v2.0.5            - Press 15  #"
 echo       "#                                                       #"
 echo       "#########################################################"
 echo       "                                                        "
@@ -371,9 +372,21 @@ if [ "$answer" = "14" ]
         exiting
 fi
 
+if [ "$answer" = "15" ]
+    then
+        packagetoinstall="gcc-c++" && packageinstaller
+        wget http://sourceforge.net/projects/iperf/files/iperf-2.0.5.tar.gz/download
+        mv download iperf-2.0.5.tar.gz
+        tar -xzvf iperf-2.0.5.tar.gz
+        cd iperf-2.0.5
+        ./configure
+        make
+        make install
+fi
+
 if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$answer" != "4" ] && [ "$answer" != "5" ] && [ "$answer" != "6" ] \
 && [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ] && [ "$answer" != "11" ] && [ "$answer" != "12" ] \
- && [ "$answer" != "13" ] && [ "$answer" != "14" ]
+ && [ "$answer" != "13" ] && [ "$answer" != "14" ] && [ "$answer" != "15" ]
     then
         mainmenu
 fi
