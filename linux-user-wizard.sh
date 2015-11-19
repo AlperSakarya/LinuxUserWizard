@@ -80,12 +80,11 @@ function packageinstaller {
         then
             echo "Using 'yum' to install the requirements.." && sleep 2
             yum -y install $packagetoinstall
-            #yum install $YUM_PACKAGE_NAME
     elif [[ ! -z $APT_GET_CMD ]]
         then
             echo "Using 'apt-get' to install the requirements.." && sleep 2
             apt-get install $packagetoinstall -y
-            #apt-get $DEB_PACKAGE_NAME
+
     else
         echo "Can't find package manager" && sleep 2
         exiting
