@@ -1,18 +1,32 @@
 #!/usr/bin/env bash
 #set -x
 
-if ! [ $(id -u) = 0 ]
-    then
-        echo "Tou need to have root privileges to run this script
-Please try again, this time using 'sudo'. Exiting."
+# Checking if script is running as root
+function checkroot {
+    if ! [ $(id -u) = 0 ]
+        then
+            echo "Tou need to have root privileges to run this script
+    Please try again, this time using 'sudo'. Exiting."
+            exit
+    fi
+}
+checkroot
+
+# Mapping distro identification commands
+YUM_CMD=$(which yum)
+APT_GET_CMD=$(which apt-get)
+
+
+# Capture Ctrl + C 
+trap ctrl_c INT
+function ctrl_c() {
+        echo ""
+        echo "GOOD BYE -- LinuxUserWizard"
+        echo ""
         exit
-fi
+}
 
-  YUM_CMD=$(which yum)
-  APT_GET_CMD=$(which apt-get)
-
-
-
+# Initialize logs at the script launch, if log file is not there
 function initializelogs {
     if [ ! -f /var/log/luw.log ]
         then
@@ -20,7 +34,7 @@ function initializelogs {
             echo "################################" >> /var/log/luw.log
             echo `date` -- "Log file initiated"  >> /var/log/luw.log
             echo "################################" >> /var/log/luw.log
-fi
+    fi
 }
 
 initializelogs # initializing the log file at launch
@@ -34,12 +48,13 @@ function exiting {
     read exitanswer
     if [ "$exitanswer" = "y" ] || [ "$exitanswer" = "Y" ]
         then
-            bash ./linux-user-wizard.sh
+            mainmenu
     elif [ "$exitanswer" = "n" ] || [ "$exitanswer" = "N" ]
         then
             echo ""
             echo "GOOD BYE -- LinuxUserWizard"
             echo ""
+            logoperation="Exited the program" && logentry
             exit
     else
         echo "Wrong option, please enter 'Y' or 'N'"
@@ -53,17 +68,6 @@ function wrongoption {
 
 }
 
-function keypairgen {
-    ssh-keygen -t rsa
-    mv /root/.ssh/id_rsa* /home/$luwuser
-    cat /home/$luwuser/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
-    chown -R $luwuser /home/$luwuser
-    chmod 600 /home/$luwuser/.ssh/authorized_keys
-    logoperation="SSH key generated"
-    logentry
-
-}
-
 function sshdirmake {
     mkdir /home/$luwuser/.ssh
     logoperation="SSH directory created"
@@ -71,6 +75,16 @@ function sshdirmake {
     touch /home/$luwuser/.ssh/authorized_keys
     logoperation="authorized_keys file created"
     logentry
+}
+
+function keypairgen {
+    ssh-keygen -t rsa -f /home/$luwuser/.ssh/id_rsa -q -N ""
+    cat /home/$luwuser/.ssh/id_rsa.pub >> /home/$luwuser/.ssh/authorized_keys
+    chmod 600 /home/$luwuser/.ssh/authorized_keys
+    chown -R $luwuser /home/$luwuser
+    logoperation="SSH key generated"
+    logentry
+
 }
 
 function packageinstaller {
@@ -91,13 +105,24 @@ function packageinstaller {
     fi
 }
 
-trap ctrl_c INT
-function ctrl_c() {
-        echo ""
-        echo "GOOD BYE -- LinuxUserWizard"
-        echo ""
-        exit
+function sudoprivilage {
+    if grep -Fxq "$luwuser" /etc/sudoers
+        then
+        echo "User is already in /etc/sudoers"
+    else
+        echo "Would you like to give SUDO privilages (administrative access) to this user? (y\n)"
+        read sudoanswer
+        if [ $sudoanswer = "y" ] || [ $sudoanswer = "Y" ]
+            then
+                echo "$luwuser    ALL=(ALL:ALL) ALL" >> /etc/sudoers
+            else
+                echo "User will be left with no sudo access"
+        fi
+    fi
 }
+
+
+function mainmenu {
 
 clear
 echo       "#########################################################"
@@ -132,6 +157,10 @@ echo       "   Select a number and hit 'Enter'                      "
 
 read answer
 
+
+
+
+
 if [ "$answer" = "1" ] ### OPTION 1 START
     then
         echo "Please enter a username"
@@ -143,8 +172,10 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 then
                     rm -rf /home/$luwuser && logoperation="Homefolder deleted" && logentry
                     useradd $luwuser -s /bin/bash
+                    chown -R $luwuser /home/$luwuser
                     sshdirmake
                     keypairgen
+                    sudoprivilage
                     exiting
             else
                 echo "Not creating the user since you want to keep the homefolder"
@@ -153,22 +184,27 @@ if [ "$answer" = "1" ] ### OPTION 1 START
                 read keyans
                 if [ "$keyans" = "y" ] || [ "$keyans" = "Y" ]
                     then
+                    if [ ! -d /home/$luwuser/.ssh]; then
+                        sshdirmake
+                    fi
                     keypairgen
                 fi
-	   	    exiting
+            sudoprivilage    
+            exiting
             fi
         fi
 
 
     if [ ! -d /home/$luwuser ]
         then
-    	    useradd $luwuser -s /bin/bash && logoperation="New user added" && logentry
-    	    if [ ! -d /home/$luwuser ] # check due ubuntu does not create home folder on user creation
-    	        then
-    	            mkdir /home/$luwuser && logoperation="Homefolder created" && logentry
-    	    fi
+            useradd $luwuser -s /bin/bash && logoperation="New user added" && logentry
+            if [ ! -d /home/$luwuser ] # check due ubuntu does not create home folder on user creation
+                then
+                    mkdir /home/$luwuser && logoperation="Homefolder created" && logentry
+            fi
             sshdirmake
             keypairgen
+            sudoprivilage
             exiting
     fi
 fi ### OPTION 1 END
@@ -180,11 +216,28 @@ if [ "$answer" = "2" ] ### OPTION 2 START
         read luwuser
         if [ -d /home/$luwuser ]
             then
-                userdel -r $luwuser && logoperation="User deleted" && logentry
-                echo "User and homefolder deleted"
+                userdel -r $luwuser
+                sed -i '/$luwuser/d' /etc/passwd
+                sed -i'/$luwuser/d' /etc/sudoers
+                rm -rf /home/$luwuser
+                if [ ! -d /home/$luwuser ]; then
+                    echo "User homefolder deleted"
+                    logoperation="User deleted" && logentry
+                fi
+		if [ -f /var/spool/mail/$luwuser ]; then
+		    rm -rf /var/spool/mail/$luwuser
+		    echo "Mail file removed"
+		fi
                 exiting
         else
-            echo "Home folder does not exist" && logoperation="Homefolder could not be found" && logentry
+            sed -i '/$luwuser/d' /etc/passwd
+            sed -i '/$luwuser/d' /etc/sudoers
+            if [ -f /var/spool/mail/$luwuser ]; then
+		rm -rf /var/spool/mail/$luwuser
+                echo "Mail file removed"
+	    fi
+            echo "Home folder does not exist"
+            logoperation="Homefolder could not be found" && logentry
             exiting
         fi
 fi ### OPTION 2 END
@@ -227,7 +280,7 @@ fi ### OPTION 4 END
 if [ "$answer" = "5" ]
     then
         cat /etc/passwd | grep /bin/bash | less && logoperation="Viewed users with shell" && logentry
-        bash ./linux-user-wizard.sh
+        mainmenu
 fi
 
 
@@ -235,9 +288,9 @@ if [ "$answer" = "6" ]
     then
         echo "Please enter the username to view it's private key"
         read keyviewuser
-    if [ -f /home/$keyviewuser/id_rsa ]
+    if [ -f /home/$keyviewuser/.ssh/id_rsa ]
         then
-            cat /home/$keyviewuser/id_rsa | less && logoperation="Private Key viewed" && logentry
+            cat /home/$keyviewuser/.ssh/id_rsa | less && logoperation="Private Key viewed" && logentry
             exiting
     else
         echo "Private key is not under" /home/$keyviewuser "or not named id_rsa" && logoperation="Private key can't be found" && logentry
@@ -248,13 +301,14 @@ fi
 if [ "$answer" = "7" ]
     then
         logoperation="Viewed logs" && logentry && less /var/log/luw.log
-        bash ./linux-user-wizard.sh
+        mainmenu
 fi
 
 if [ "$answer" = "8" ]
     then
         rm -f /var/log/luw.log
         initializelogs
+        echo "Logs has been deleted and re-initialized"
         exiting
 fi
 
@@ -269,19 +323,20 @@ fi
 if [ "$answer" = "10" ]
     then
     packagetoinstall="unzip" && packageinstaller
-    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
-    unzip awscli-bundle.zip
-    ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "/tmp/awscli-bundle.zip"
+    unzip /tmp/awscli-bundle.zip
+    ./tmp/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
     echo "Would you like to configure AWS CLI now? (y/n)"
         read awsclians
-	if [ "$awsclians" = "y" ] || [ "$awsclians" = "Y" ]
-	    then
-	        aws configure && exiting
-	    else
-	        echo "Please issue 'aws configure' command after closing this tool"
-		exiting
-	fi
-    rm -f awscli-bundle.zip
+    if [ "$awsclians" = "y" ] || [ "$awsclians" = "Y" ]
+        then
+            aws configure && logoperation="AWS CLI Installed" && logentry && exiting
+        else
+            echo "Please issue 'aws configure' command after closing this tool"
+            logoperation="AWS CLI Installed" && logentry
+        exiting
+    fi
+    rm -f /tmp/awscli-bundle.zip
     exiting
 fi
 
@@ -318,10 +373,15 @@ fi
 
 if [ "$answer" != "1" ] && [ "$answer" != "2" ] && [ "$answer" != "3" ] && [ "$answer" != "4" ] && [ "$answer" != "5" ] && [ "$answer" != "6" ] \
 && [ "$answer" != "7" ] && [ "$answer" != "8" ] && [ "$answer" != "9" ] && [ "$answer" != "10" ] && [ "$answer" != "11" ] && [ "$answer" != "12" ] \
- && [ "$answer" != "13" ] && [ "$answer" != "14" ] && [ "$answer" != "15" ]
+ && [ "$answer" != "13" ] && [ "$answer" != "14" ]
     then
-        bash ./linux-user-wizard.sh
+        mainmenu
 fi
+
+}
+
+mainmenu
+
 
 
 
