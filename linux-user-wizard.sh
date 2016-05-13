@@ -5,7 +5,7 @@
 function checkroot {
     if ! [ $(id -u) = 0 ]
         then
-            echo "Tou need to have root privileges to run this script
+            echo "You need to have root privileges to run this script
     Please try again, this time using 'sudo'. Exiting."
             exit
     fi
