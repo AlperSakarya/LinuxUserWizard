@@ -10,7 +10,7 @@ A very little tool for conveniently adding/removing Linux users with SSH keys
 
 
 ### Screenshot: 
-http://imgur.com/9G2PNlx
+https://imgur.com/EWJyzus
 
 ### Fatures:
 ```
